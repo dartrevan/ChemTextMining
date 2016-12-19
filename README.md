@@ -1,6 +1,7 @@
 # ChemTextMining
 ## Short description of repository
 ##### This repository contains code and additional resources for experimenting on disease entities extraction using conditional random fields. Structure is as follows:<br>
+0. webmd_corpus.json is a full corpus. 
 1. classification_pipe.py - entry point of program. 
 2. vocabularies - directory with used vocabularies in txt format, each line contains one vocabulary entity.
 3. clustered words - directory with words clustered using brown clustering algorithm.
