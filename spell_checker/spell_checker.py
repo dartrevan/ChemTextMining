@@ -2,7 +2,7 @@ import re, collections
 import os
 from nltk.tokenize import wordpunct_tokenize
 
-location = '/'.join(__file__.split('/')[:-1])
+location = os.path.dirname(os.path.abspath(__file__))
 
 def words(text):
     return re.findall('[a-z]+', text.lower())
