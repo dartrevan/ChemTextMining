@@ -12,7 +12,7 @@
 1. Install all the requirements.
             
             pip install -r requirements.txt
-            
+   Also perl is need to be installed         
             
 2. Specify in "features" dictionary current token features from list of available features. Also it's necessary to define context size by setting k_prev(tokens to look before) and k_next(tokens to look forward) and features for each context token(in prev_features and next_features).
 3. Run code:
