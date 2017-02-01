@@ -5,11 +5,12 @@ import codecs
 from parse import parse
 import json
 import os
-from remove_itersections import remove_intersections_from_entities
+from remove_itersections import remove_intersections_from_entities, remove_intersections
 from correct_text import correct_review
 
-ann_data_directory = '../annotated_data_2'
+ann_data_directory = '../annotated_data'
 output_directory = '../corpus_json'
+output_filename = 'corpus.txt'
 
 class EntityNotInText(Exception):
     pass
@@ -29,11 +30,26 @@ def parse_txt_file(txt_file):
 
     return id_, url, title, text, rating, condition, back
 
+def parse_txt_file_med_reviews(txt_file):
+    with codecs.open(txt_file, encoding='utf-8') as in_file:
+        content = in_file.readlines()
+
+    id_ = os.path.basename(txt_file).split('.')[0]
+    content = map(lambda line: line.strip('\n'), content)
+    url = content[0]
+    title = content[2]
+    text = content[4]
+    rating = int(content[6])
+    back = len(''.join(content[:4])) + 3
+
+    return id_, url, title, text, rating, back
+
 def is_entity(line):
     return re.findall(r'^T[0-9]+', line)
 
 def is_type(line):
     return re.findall(r'^A[0-9]+', line)
+
 
 def parse_start_end(positions, review_text, annotation_text, back):
     starts = []
@@ -41,8 +57,9 @@ def parse_start_end(positions, review_text, annotation_text, back):
     parse_pair_string = '{:d} {:d}'
     for start_end_str in re.findall(r'[0-9]+ [0-9]+', positions):
         start, end = parse(parse_pair_string, start_end_str).fixed
+        #print start, end
         start, end = start - back, end - back
-        if len(review_text) >= end - 1  and start >= -1: # по хорошему сначала надо поправить все офсеты, а потом фильтровать лишние, но в теории все должно быть норм
+        if len(review_text) >= end - 1  and start >= -1:
             step = 0
             if review_text[start + 1:end + 1] == annotation_text[:end-start]:
                 step = 1
@@ -50,7 +67,9 @@ def parse_start_end(positions, review_text, annotation_text, back):
                 step = -1
             start, end = start + step, end + step
             assert review_text[start:end] == annotation_text[:end-start], ' Expected |%s|, Actual |%s|' % (annotation_text, review_text[start:end])
-            annotation_text = re.sub('^%s[ ]*' % review_text[start:end], '', annotation_text)
+            removing_str = re.sub('\(','\(', review_text[start:end])
+            removing_str = re.sub('\)','\)', removing_str)
+            annotation_text = re.sub('^%s[ ]*' % removing_str, '', annotation_text)
             starts += [start]
             ends += [end]
         else:
@@ -86,13 +105,17 @@ def parse_ann_file(ann_file, review_text, back):
             type_ = parse(type_parse_string, line).named
             entity_id = type_['entity_id']
             entity_type = type_['type']
+            type_name = type_['type_name']
             if entity_id in entities:
-                entities[entity_id]['type'] = entity_type
+                if type_name != 'Sentiment':
+                    entities[entity_id]['type'] = entity_type
+                else:
+                    entities[entity_id]['sentiment'] = entity_type
 
     return entities
 
 def process_annotated_data(output_directory, input_directory):
-    with codecs.open(os.path.join(output_directory, 'corpus_2.txt'), 'w', encoding='utf-8') as out_file:
+    with codecs.open(os.path.join(output_directory, output_filename), 'w', encoding='utf-8') as out_file:
         for txt_file, ann_file in ann_files_iterator(input_directory):
             review = {}
             id_, url, title, text, rating, condition, back = parse_txt_file(txt_file)
@@ -107,9 +130,27 @@ def process_annotated_data(output_directory, input_directory):
                 review['condition'] = condition
                 review['entities'] = entities
                 remove_intersections_from_entities(review)
+                remove_intersections_(review)
                 correct_review(review)
                 out_file.write(json.dumps(review) + u'\n')
 
+
+def process_annotated_data_med_reviews(output_directory, input_directory):
+    with codecs.open(os.path.join(output_directory, output_filename), 'w', encoding='utf-8') as out_file:
+        for txt_file, ann_file in ann_files_iterator(input_directory):
+            review = {}
+            id_, url, title, text, rating, back = parse_txt_file_med_reviews(txt_file)
+            entities = parse_ann_file(ann_file, text, back)
+            if entities:
+                review['id'] = id_
+                review['url'] = url
+                review['title'] = title
+                review['text'] = text
+                review['rating'] = rating
+                review['entities'] = entities
+                remove_intersections_from_entities(review)
+                #correct_review(review)
+                out_file.write(json.dumps(review, ensure_ascii=False) + u'\n')
 
 if __name__ == '__main__':
     process_annotated_data(output_directory, ann_data_directory)

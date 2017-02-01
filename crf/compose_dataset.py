@@ -9,6 +9,21 @@ from vocabularies.dictionary import Dictionary
 dictionaries = {}
 
 
+"""
+bow_dictionary = []
+with codecs.open('b_dict_.txt', encoding='utf-8') as in_file:
+    bow_dictionary += map(lambda word: word.strip('\n'), in_file.readlines())
+
+with codecs.open('i_dict_.txt', encoding='utf-8') as in_file:
+    bow_dictionary += map(lambda word: word.strip('\n'), in_file.readlines())
+
+with codecs.open('o_dict.txt', encoding='utf-8') as in_file:
+    bow_dictionary += map(lambda word: word.strip('\n'), in_file.readlines())[:10]
+bow_dictionary = list(set(bow_dictionary))
+"""
+
+
+
 
 def prepare_dictionary(dic_location):
     if dic_location not in dictionaries:
@@ -93,13 +108,19 @@ def dictionary_bio_extend(extended_tokens, dictionary_location):
 
     return extended_tokens
 
+def bow(extended_tokens, i, dictionary):
+    lemms = map(lambda extended_token: extended_token['lemm'], extended_tokens)
+    window_size = 3
+    left_bound = i - window_size if i - window_size >= 0 else 0
+    right_bound = i + window_size
+    return {'bow_%i' % j: lemms[left_bound:right_bound].count(word) for j, word in enumerate(dictionary)}
 
 def word2features(extended_tokens, i, current_token_features, prev_tokens_features, next_tokens_features, k_prev, k_next):
     features = {}
     features.update(extract_features_for_token(extended_tokens[i], features=current_token_features))
     features.update(add_prev_tokens(extended_tokens, i, k_prev, prev_tokens_features))
     features.update(add_next_tokens(extended_tokens, i, k_next, next_tokens_features))
-    #features.update({'BOS': i == 0, 'EOS': i == len(extended_tokens) - 1})
+    #features.update(bow(extended_tokens, i, bow_dictionary))
     return features
 
 
@@ -110,26 +131,28 @@ def sent2vectors(sent, prev_tokens_features = {}, next_tokens_features = {}, cur
     positions = []
     spaces = []
     ids = []
+    try:
+        extended_tokens = parse_sent(sent)
+        if dicts:
+            extended_tokens = dictionary_bio_extend(extended_tokens, dict_adr_lex_location)
+            extended_tokens = dictionary_bio_extend(extended_tokens, dict_patterns_location)
+            extended_tokens = dictionary_bio_extend(extended_tokens, dict_do_location)
+            extended_tokens = dictionary_bio_extend(extended_tokens, dict_finding_location)
+            extended_tokens = dictionary_bio_extend(extended_tokens, dict_umls_location)
+            extended_tokens = dictionary_bio_extend(extended_tokens, dict_wiki_location)
+            extended_tokens = dictionary_bio_extend(extended_tokens, dict_webmd_conditions_location)
 
-    extended_tokens = parse_sent(sent)
-    if dicts:
-        extended_tokens = dictionary_bio_extend(extended_tokens, dict_adr_lex_location)
-        extended_tokens = dictionary_bio_extend(extended_tokens, dict_patterns_location)
-        extended_tokens = dictionary_bio_extend(extended_tokens, dict_do_location)
-        extended_tokens = dictionary_bio_extend(extended_tokens, dict_finding_location)
-        extended_tokens = dictionary_bio_extend(extended_tokens, dict_umls_location)
-        extended_tokens = dictionary_bio_extend(extended_tokens, dict_wiki_location)
-        extended_tokens = dictionary_bio_extend(extended_tokens, dict_webmd_conditions_location)
+        for i, extended_token in enumerate(extended_tokens):
+            X += [word2features(extended_tokens, i, current_token_features, prev_tokens_features, next_tokens_features, k_prev, k_next)]
+            Y += [extended_token['bio_tag']]
+            tokens += [extended_token['token']]
+            positions += [{'start':extended_token['w_start'], 'end':extended_token['w_end']}]
+            spaces += [extended_token['delimitter']]
+            ids += [extended_token['id']]
 
-    for i, extended_token in enumerate(extended_tokens):
-        X += [word2features(extended_tokens, i, current_token_features, prev_tokens_features, next_tokens_features, k_prev, k_next)]
-        Y += [extended_token['bio_tag']]
-        tokens += [extended_token['token']]
-        positions += [{'start':extended_token['w_start'], 'end':extended_token['w_end']}]
-        spaces += [extended_token['delimitter']]
-        ids += [extended_token['id']]
-
-    return Y, X, tokens, positions, spaces, ids
+        return Y, X, tokens, positions, spaces, ids
+    except:
+        return [], [], [], [], [], []
 
 
 def compose_dataset(conll_file_location, features):

@@ -5,6 +5,7 @@ import sklearn_crfsuite
 from os import popen, path
 from numpy import mean, arange
 import numpy as np
+import pickle
 
 
 
@@ -24,28 +25,28 @@ import numpy as np
 """
 
 update_conll_folds = False # set to true if json folds are updated
-folds_locations = ['corpus_json/%i/' % i for i in range(5)] # location of folds
-in_memory = True # persist all folds in memory
+folds_locations = ['new_folds/%i/' % i for i in range(5)] # location of folds
+in_memory = False # persist all folds in memory
 
 features = {
-    'current_features':['baseline_feature'],
-    'prev_features':[],
-    'next_features':[],
-    'k_prev':0,
-    'k_next':0
+    'current_features':['baseline_feature', 'suffixes_preffixes_features',  'pos_tag_feature', 'w2v_features', 'brown_cluster_feature','dictionary_features'],
+    'prev_features':['baseline_feature'],
+    'next_features':['baseline_feature'],
+    'k_prev':1,
+    'k_next':1
 }
 
 
 def exact_eval(output_file_loc):
     exact_lines = popen('evaluation/./conlleval < %s' % output_file_loc).readlines()
-    exact_fscore = exact_lines[1].split(';')[3].split(':')[1]
-    exact_precision = exact_lines[1].split(';')[1].split(':')[1].strip('%')
-    exact_recall = exact_lines[1].split(';')[2].split(':')[1].strip('%')
+    exact_fscore = exact_lines[2].split(';')[2].split(':')[1].split()[0]
+    exact_precision = exact_lines[2].split(';')[0].split(':')[2].strip('%')
+    exact_recall = exact_lines[2].split(';')[1].split(':')[1].strip('%')
 
     return exact_precision, exact_recall, exact_fscore
 
 def weak_eval(gold_file, pred_file):
-    weak_lines = popen('python evaluation/eval.py -g %s -t %s -w weak' % (gold_file, pred_file)).readlines()
+    weak_lines = popen('python evaluation/eval.py -g %s -t %s -w weak -a entity' % (gold_file, pred_file)).readlines()
     weak_fscore = weak_lines[-1].split('\t')[3]
     weak_precision = weak_lines[-1].split('\t')[1]
     weak_recall = weak_lines[-1].split('\t')[2]
@@ -63,11 +64,11 @@ if __name__ == '__main__':
     params_space = [
                     {'algorithm':'pa', 'pa_type':0},
                     {'algorithm':'pa', 'pa_type':1},
-                    {'algorithm':'pa', 'pa_type':2}
+                    {'algorithm':'pa', 'pa_type':2},
                 ]
     crf = sklearn_crfsuite.CRF(
                             max_iterations=100,
-                            all_possible_transitions=True,
+                            all_possible_transitions=False,
                         )
     fold_exact_scores = []
     fold_weak_scores = []
@@ -85,6 +86,7 @@ if __name__ == '__main__':
 
             crf.set_params(**params)
             crf.fit(X_train, y_train)
+
             y_pred = crf.predict(X_test)
 
             save_pred_json(y_pred, tokens_test, positions_test, spaces_test, ids_test, folds_locations[i] + 'test/test.json', 'corpus_json/corpus_pred_%i.txt' % i)

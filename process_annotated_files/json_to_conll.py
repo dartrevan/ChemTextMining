@@ -4,12 +4,16 @@ from nltk.tokenize import wordpunct_tokenize, sent_tokenize
 from nltk.stem import WordNetLemmatizer
 import nltk
 from nltk.corpus import wordnet
-from spell_checker.spell_checker import correct
+from ChemTextMining.spell_checker.spell_checker import correct
 
 
 
+
+def dummy_tagger(tokens):
+    return ['dummy_tag' for token in tokens]
 
 tagger = nltk.data.load('taggers/maxent_treebank_pos_tagger/english.pickle')
+#tagger = dummy_tagger
 lemmatizer = WordNetLemmatizer()
 
 def get_wordnet_pos(treebank_tag):
@@ -33,15 +37,18 @@ def get_bio_tag(w_start, w_end, entities):
             raise Exception("Entities end must be an integer")
         start = entity['start']
         end = entity['end']
-        if w_start > start and w_end <= end:
-            return 'I-' + 'DIS'
-        elif w_start == start and w_end <= end:
-            return 'B-' + 'DIS'
+        if entity['entity'] == 'Disease' or entity['type'] in ['Drugname', 'Drugclass']:
+            if w_start > start and w_end <= end:
+                adding = 'DIS' if entity['entity'] == 'Disease' else 'DRUG'
+                return 'I-' + adding
+            elif w_start == start and w_end <= end:
+                adding = 'DIS' if entity['entity'] == 'Disease' else 'DRUG'
+                return 'B-' + adding
     return 'O'
 
 def get_token_position_in_text(token, w_start, text):
     delimitter_start = None
-    while text[w_start:w_start+len(token)] != token:
+    while text[w_start:w_start+len(token)] != token or (delimitter_start == None and w_start != 0):
         w_start += 1
         delimitter_start = delimitter_start or w_start
     return w_start, w_start + len(token), text[delimitter_start:w_start]

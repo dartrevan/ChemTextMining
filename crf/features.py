@@ -17,7 +17,7 @@ w2vmodel = None
 
 def load_w2v_model():
     global w2vmodel
-    w2vmodel = word2vec.Word2Vec.load_word2vec_format('word2vec/health/Health.s200.w10.n5.v15.cbow.bin', binary=True)
+    w2vmodel = word2vec.Word2Vec.load_word2vec_format('word2vec/Health_2.5mreviews.s200.w10.n5.v15.cbow.bin', binary=True)
 
 def prepare_brown_clusters():
     global brown_clusters
@@ -72,7 +72,7 @@ def istitle_token(extended_token, key):
 
 def brown_cluster_info(extended_token, key):
     token = correct(extended_token['token'].lower())
-    return {key:brown_clusters[token]}
+    return {key:brown_clusters[token]} if token in brown_clusters else dict()
 
 def w2v_cluster_info(extended_token, key):
     token = extended_token['token'].lower()

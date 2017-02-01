@@ -21,13 +21,32 @@ def remove_intersections_from_entities(review):
             continue
         possibly_removing_entities = view_order[i+1:]
         for element_for_check in possibly_removing_entities:
+            if element_for_check not in review['entities']:
+                continue
             if review['entities'][current_element]['end'] < review['entities'][element_for_check]['start']:
                 break
             if review['entities'][element_for_check]['entity'] == review['entities'][current_element]['entity']:
+                print review['id'], review['entities'][element_for_check]['entity']
                 del review['entities'][element_for_check]
 
-        if review['entities'][current_element]['entity'] != 'Disease':
-            del review['entities'][current_element]
+        #if review['entities'][current_element]['entity'] != 'Disease':
+        #    del review['entities'][current_element]
+
+def remove_intersections(review):
+    entities_ = review['entities'].copy()
+    for key_o, entity_o in review['entities'].iteritems():
+        if entity_o['entity'] != 'Disease':
+            continue
+        for key_i, entity_i in review['entities'].iteritems():
+            if entity_i['entity'] != 'Medication' and key_o == key_i:
+                continue
+            # Drug in disease
+            if entity_o['start'] <= entity_i['start'] and entity_i['end'] <= entity_o['end']:
+                del entities_[key_i]
+            # disease in drug
+            if entity_i['start'] <= entity_o['start'] and entity_o['end'] <= entity_i['end']:
+                del entities_[key_o]
+    review['entities'] = entities_
 
 if __name__ == '__main__':
     with codecs.open(input_file, encoding='utf-8') as in_file:

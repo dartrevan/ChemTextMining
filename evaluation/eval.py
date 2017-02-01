@@ -46,25 +46,18 @@ def get_terms(item, gold, task, type):
 
 def get_units(item, gold, task, type):
     units = []
-    review_id = int(item.get("id"))
-    content = item.get("text")
-    if gold:
-        terms = item.get("entities").values()
-    else:
-        terms = item.get("entities_pred")
-        if terms == None:
-            return review_id, 0, units
-        terms = terms.values()
+    review_id = int(item["id"])
+    content = item["text"]
+    terms = item.get("entities", {}) if gold else item.get("entities_pred", {})
+    terms = terms.values()
 
     terms_count = 0
 
     term_set = [] # we don't have to take repeated terms
 
     for json_term in terms:
-        if task == "entity":  # task switch
-            if json_term.get("entity") != "Disease":
-                if gold==True:
-                    continue
+        if task == "entity" and json_term.get("entity") != "Disease" and gold:  # task switch
+            continue
 
         term_identifier = str(json_term.get("start"))+"_"+ str(json_term.get("end"))
 
@@ -74,7 +67,7 @@ def get_units(item, gold, task, type):
 
         terms_count += 1
 
-        written_term = json_term.get("text")
+        #written_term = json_term.get("text")
         position_from = int(json_term.get("start"))
         position_to = int(json_term.get("end"))
         term = content[position_from:position_to]
@@ -90,11 +83,8 @@ def get_units(item, gold, task, type):
     return review_id, terms_count, units
 
 def getAllDocs(f):
-    data = []
     with codecs.open(f, encoding="utf-8") as fin:
-        for line in fin:
-            data.append(json.loads(line))
-    return data
+        return map(json.loads, fin.readlines())
 
 def computeEvalNumbers(alg_type, itemlistGS, itemlistTest, task, type):
     print "type\tid\tcorrect_unit_count\textracted_unit_coun\tmatch_count\tp\tr\tf"
@@ -109,9 +99,10 @@ def computeEvalNumbers(alg_type, itemlistGS, itemlistTest, task, type):
             idx2units[idx] = (terms_count, units)
     total_p, total_r, total_f = .0, .0, .0
     processed = []
-
+    match_collection = []
+    correct_collection = []
+    extracted_collection = []
     for itm in itemlistTest:
-        idx = int(itm.get("id"))
 
         if alg_type == "weak":
             idx, terms_count, units = get_units(itm, False, task, type)
@@ -121,13 +112,17 @@ def computeEvalNumbers(alg_type, itemlistGS, itemlistTest, task, type):
         if idx in idx2units and not idx in processed: #it's not processed test review
             processed.append(idx)
             correct = idx2units[idx][1]
+            correct_collection += correct
             correct4del = [i for i in correct]
             extracted = units
+            extracted_collection += extracted
             match = []
             for i in extracted:
                 if i in correct4del:
                     match.append(i)
                     correct4del.remove(i)
+            match_collection += match
+
             try:
                 r = float(len(match))/len(correct)
                 p = float(len(match))/len(extracted) if len(extracted) != 0 else 0
@@ -144,6 +139,11 @@ def computeEvalNumbers(alg_type, itemlistGS, itemlistTest, task, type):
                 continue
 
     n = len(idx2units.keys())
+    collection_p = float(len(match_collection))/len(correct_collection)
+    collection_r = float(len(match_collection))/len(extracted_collection) if len(extracted_collection) != 0 else 0
+    collection_f = 0 if collection_p == 0 and collection_r == 0 else (2*collection_p*collection_r)/(collection_p+collection_r)
+
+    print "%s\t%f\t%f\t%f" % (type,collection_p, collection_r, collection_f)
     print "%s\t%f\t%f\t%f" % (type,total_p/n, total_r/n, total_f/n)
 
 def main(argv=None):
