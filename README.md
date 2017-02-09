@@ -30,4 +30,4 @@
           precision	recall	fscore
           
    
-#### Note: To use different word embedding vectors need to scecify it in crf/features.py in load_w2v_model function.
+#### Note: To use different word embedding vectors need to specify it in crf/features.py in load_w2v_model function.
