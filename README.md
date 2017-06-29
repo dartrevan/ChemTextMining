@@ -33,3 +33,12 @@
 #### Note: To use different word embedding vectors need to specify it in crf/features.py in load_w2v_model function.
 #### Citing: 
 Please cite this paper: http://www.dialog-21.ru/media/3932/miftahutdinovzshetal.pdf
+##### BibTex:
+@inproceedings{miftahutdinov2017,
+  title={Identifying Disease-related Expressions in Reviews using Conditional Random Fields},
+  author={Miftahutdinov, Zulfat and Tutubalina, Elena and Tropsha, Alexander},
+  booktitle={Proceedings of International Conference Dialog},
+  volume={1},
+  pages={},
+  year={2017}
+}
