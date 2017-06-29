@@ -31,3 +31,5 @@
           
    
 #### Note: To use different word embedding vectors need to specify it in crf/features.py in load_w2v_model function.
+#### Citing: 
+Please cite this paper: http://www.dialog-21.ru/media/3932/miftahutdinovzshetal.pdf
