@@ -10,6 +10,8 @@
 6. remaining is utility code
 
 ## Usage:
+0. How to load vectors(to use them in your application):
+            w2v = KeyedVectors.load_word2vec_model('patht/to/vectors', binary=True)                       
 1. Install all the requirements.
 
             pip install -r requirements.txt
@@ -43,3 +45,13 @@
                   pages={155-167},
                   year={2017}
     }
+    @article{tutubalina2017using,
+            title={Using semantic analysis of texts for the identification of drugs with similar therapeutic effects},
+            author={Tutubalina, EV and Miftahutdinov, Z Sh and Nugmanov, RI and Madzhidov, TI and Nikolenko, SI and Alimova, IS and Tropsha, AE},
+            journal={Russian Chemical Bulletin},
+            volume={66},
+            number={11},
+            pages={2180--2189},
+            year={2017},
+            publisher={Springer}
+}
