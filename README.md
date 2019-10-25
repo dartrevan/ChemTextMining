@@ -11,6 +11,7 @@
 
 ## Usage:
 0. How to load vectors(to use them in your application):
+
             w2v = KeyedVectors.load_word2vec_model('patht/to/vectors', binary=True)                       
 1. Install all the requirements.
 
