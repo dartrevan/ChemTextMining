@@ -43,7 +43,7 @@ nbconvert==4.2.0
 nbformat==4.0.1
 networkx==1.11
 nltk==3.2.1
-notebook==4.2.0
+notebook==5.7.8
 numpy==1.11.0
 pandas==0.18.1
 parse==1.6.6
