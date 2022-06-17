@@ -44,7 +44,7 @@ nbformat==4.0.1
 networkx==1.11
 nltk==3.2.1
 notebook==4.2.0
-numpy==1.11.0
+numpy==1.21.0
 pandas==0.18.1
 parse==1.6.6
 parsel==1.0.3
